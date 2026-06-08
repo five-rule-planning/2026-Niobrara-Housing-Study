@@ -247,3 +247,7 @@ mapview::mapview(
 :::{.content-hidden when-format="html"}:::
 ![](Figures/housing_age_all.png){fig-align="center" width=150%}
 :::
+
+## Community Housing Needs {.unnumbered}
+
+## Affordable Housing Development {.unnumbered}
