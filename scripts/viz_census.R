@@ -908,6 +908,12 @@ make_population_projections <- function(my_list) {
 
     plot_path = paste0("figures/pop_projections/", id_tag, ".png")
 
+    tab_path = paste0(
+      "tables/tab_pop_increase/tab_pop_increase_",
+      id_tag,
+      ".Rda"
+    )
+
     pred_1pct = my_list[[i]] %>%
       pivot_wider(
         id_cols = NAME,
@@ -1085,6 +1091,40 @@ make_population_projections <- function(my_list) {
       height = 6,
       unit = "in"
     )
+
+    basepop = unique(dat_viz[dat_viz$Year == 2020, ]$Population)
+
+    tab_growth = dat_viz %>%
+      mutate(popchange = Population - basepop) %>%
+      filter(
+        Year %in% c(2050),
+        type %in% c("1% Annual Growth Rate", "0.25% Annual Growth Rate")
+      ) %>%
+      pivot_wider(
+        data = .,
+        id_cols = Year,
+        names_from = type,
+        values_from = popchange
+      ) %>%
+      mutate(Year = "Population Increase by 2050")
+
+    tab_viz = dat_viz %>%
+      filter(
+        Year %in% c(2040, 2050),
+        type %in% c("1% Annual Growth Rate", "0.25% Annual Growth Rate")
+      ) %>%
+      mutate(Year = paste0("Projected Population in ", Year)) %>%
+      pivot_wider(
+        data = .,
+        id_cols = Year,
+        names_from = type,
+        values_from = Population
+      ) %>%
+      rbind(., tab_growth) %>%
+      rename("info" = "Year") %>%
+      as.data.frame()
+
+    save(tab_viz, file = tab_path)
   }
 
   end.time <- Sys.time()
@@ -1093,3 +1133,5 @@ make_population_projections <- function(my_list) {
 }
 
 make_population_projections(my_list = hist_data)
+
+##### Population Projection Tables #####

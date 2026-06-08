@@ -179,7 +179,7 @@
 
 
 \title{Niobrara Housing Study}
-\author{Bobbi Petit, AICP \and Jordan Duffin Wong, Ph.D}
+\author{Bobbi Pettit, AICP \and Jordan Duffin Wong, Ph.D}
 \date{}
 \begin{document}
 \maketitle
@@ -260,7 +260,7 @@ five ratings:\footnote{The Assessor also calculates intermediate
 The map below displays the housing conditions in Niobrara.
 
 \begin{center}
-\pandocbounded{\includegraphics[keepaspectratio]{Figures/housing_conditions_all.png}}
+\pandocbounded{\includegraphics[keepaspectratio]{figures/housing_conditions_all.png}}
 \end{center}
 
 We tabulate the condition of the residential housing structures across
@@ -372,7 +372,7 @@ years. Many of the homes in Western Knox County are more than a century
 old, indicating that action is necessary to keep the overall housing
 stock up to date.
 
-\begin{longtable*}[l]{l>{\centering\arraybackslash}p{15em}cc}
+\begin{longtable*}[l]{lc>{\centering\arraybackslash}p{15em}c}
 \toprule
 \cellcolor{gray}{\textcolor{white}{Decade Built}} & \cellcolor{gray}{\textcolor{white}{Parcels}} & \cellcolor{gray}{\textcolor{white}{Area (Square Acres)}} & \cellcolor{gray}{\textcolor{white}{Percent of Total Area}}\\
 \midrule
@@ -401,11 +401,55 @@ stock up to date.
 Notebook}}
 
 \begin{center}
-\includegraphics[width=1.5\linewidth,height=\textheight,keepaspectratio]{Figures/housing_age_all.png}
+\pandocbounded{\includegraphics[keepaspectratio]{figures/housing_age_all.png}}
 \end{center}
 
 \subsection*{Community Housing Needs}\label{community-housing-needs}
 \addcontentsline{toc}{subsection}{Community Housing Needs}
+
+(context: the town literally moved in 1976!)
+
+\begin{center}
+\pandocbounded{\includegraphics[keepaspectratio]{figures/historical_trends/Niobrara.png}}
+\end{center}
+
+\begin{center}
+\pandocbounded{\includegraphics[keepaspectratio]{figures/pop_projections/Niobrara.png}}
+\end{center}
+
+\begin{center}
+\pandocbounded{\includegraphics[keepaspectratio]{figures/hh_sizes/fam_sizes_3134370_Niobrara_NE.png}}
+\end{center}
+
+\begin{center}
+\pandocbounded{\includegraphics[keepaspectratio]{figures/hh_sizes/hh_sizes_3134370_Niobrara_NE.png}}
+\end{center}
+
+\begin{longtable*}[l]{>{\raggedright\arraybackslash}p{12em}>{\centering\arraybackslash}p{12em}>{\centering\arraybackslash}p{12em}}
+\toprule
+\cellcolor{gray}{\textcolor{white}{}} & \cellcolor{gray}{\textcolor{white}{1\% Annual Growth Rate}} & \cellcolor{gray}{\textcolor{white}{0.25\% Annual Growth Rate}}\\
+\midrule
+\endfirsthead
+\multicolumn{3}{@{}l}{\textit{(continued)}}\\
+\toprule
+\cellcolor{gray}{\textcolor{white}{}} & \cellcolor{gray}{\textcolor{white}{1\% Annual Growth Rate}} & \cellcolor{gray}{\textcolor{white}{0.25\% Annual Growth Rate}}\\
+\midrule
+\endhead
+
+\endfoot
+\bottomrule
+\endlastfoot
+\cellcolor{gray!10}{Projected Population in 2040} & \cellcolor{gray!10}{442} & \cellcolor{gray!10}{383}\\
+Projected Population in 2050 & 486 & 393\\
+\cellcolor{gray!10}{Population Increase by 2050} & \cellcolor{gray!10}{121} & \cellcolor{gray!10}{28}\\
+\cellcolor{gray}{\textcolor{white}{New Housing Units Needed by 2050}} & \cellcolor{gray}{\textcolor{white}{60}} & \cellcolor{gray}{\textcolor{white}{15}}\\*
+\end{longtable*}
+
+\textsubscript{Source:
+\href{https://jordanduffinw.github.io/2026-Niobrara-Housing-Study/housingstudy.qmd.html}{Article
+Notebook}}
+
+\pandocbounded{\includegraphics[keepaspectratio]{figures/pop_pyramids/3134370_Niobrara_NE.png}}
 
 \subsection*{Affordable Housing
 Development}\label{affordable-housing-development}

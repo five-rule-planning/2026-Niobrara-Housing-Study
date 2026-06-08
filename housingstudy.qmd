@@ -1,9 +1,11 @@
 ---
 title: Niobrara Housing Study
 authors:
-  - name: Bobbi Petit, AICP
+  - name: Bobbi Pettit, AICP
+    email: bobbi@fiveruleplanning.com
     affiliation: FIVE RULE Rural Planning
   - name: Jordan Duffin Wong, Ph.D
+    email: jordan@fiveruleplanning.com
     orcid: 0009-0005-6984-2980
 date-format: 06, 2026
 favicon: Images/five_rule_logo.png
@@ -12,9 +14,6 @@ pdf-engine: xelatex
 
 format:
   html:
-    # page-layout: full
-    # reference-location: margin
-    # title-block-style: none
     number-sections: true
     # linkcolor: Teal
     mainfont: "Verdana"
@@ -22,7 +21,6 @@ format:
     toc-location: left
     toc-title: "Contents"
     output-file: housingstudy
-    # default-image-extension: svg  
   pdf:
     mainfont: "Verdana"
     sansfont: "Verdana"
@@ -34,6 +32,7 @@ format:
 ```{r Document Setup}
 #| echo: FALSE
 #| warning: FALSE
+#| message: FALSE
 # These are the R packages used to generate this section.
 library(extrafont) # Font manager
 library(ggrepel) # Label repels
@@ -97,6 +96,8 @@ The map below displays the housing conditions in Niobrara.
 
 :::{.content-hidden when-format="pdf"}:::
 ```{r Viz Housing Condition}
+#| warning: false
+#| message: false
 housing_condition <- read_sf(
   dsn = "data/shapefiles/shp-parcel-inventory/shp-parcel-inventory.shp"
 ) %>%
@@ -138,7 +139,7 @@ mapview::mapview(housing_condition,
 :::
 
 :::{.content-hidden when-format="html"}:::
-![](Figures/housing_conditions_all.png){fig-align="center"}
+![](figures/housing_conditions_all.png){fig-align="center"}
 :::
 
 <br>
@@ -181,16 +182,7 @@ We have several remarks on the housing conditions of Western Knox County:
 
 The Knox County Property Assessor also documents the age of housing structures. Knowing the age of community housing stock is important because the workable lifespan of a typical house is about one hundred years. Many of the homes in Western Knox County are more than a century old, indicating that action is necessary to keep the overall housing stock up to date.
 
-```{r Tabulate Housing Age}
-#| echo: false
-load(file = "tables/tab_housing_age_all.Rda")
-
-kable(tab_housing_age, align = c("l", "c", "c", "c"), format.args = list(big.mark = ",")) %>%
-  kable_styling(bootstrap_options = c("striped", "hover"), position = "left", full_width = F,
-                   fixed_thead = T, latex_options = c("striped", "HOLD_position", "repeat_header")) %>%
-  row_spec(row = 0, color = "white", background = "gray") %>%
-  column_spec(2, width = "15em")
-```
+<br>
 
 :::{.content-hidden when-format="pdf"}:::
 ```{r Viz Housing Age}
@@ -244,10 +236,61 @@ mapview::mapview(
 ```
 :::
 
+<br>
+
+```{r Tabulate Housing Age}
+#| echo: false
+load(file = "tables/tab_housing_age_all.Rda")
+
+kable(tab_housing_age, align = c("l", "c", "c", "c"), format.args = list(big.mark = ",")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), position = "left", full_width = F,
+                   fixed_thead = T, latex_options = c("striped", "HOLD_position", "repeat_header")) %>%
+  row_spec(row = 0, color = "white", background = "gray") %>%
+  column_spec(3, width = "15em")
+```
+
 :::{.content-hidden when-format="html"}:::
-![](Figures/housing_age_all.png){fig-align="center" width=150%}
+![](figures/housing_age_all.png){fig-align="center"}
 :::
 
 ## Community Housing Needs {.unnumbered}
+
+(context: the town literally moved in 1976!)
+
+![](figures/historical_trends/Niobrara.png){fig-align="center"}
+
+<br>
+
+![](figures/pop_projections/Niobrara.png){fig-align="center"}
+
+<br>
+
+![](figures/hh_sizes/fam_sizes_3134370_Niobrara_NE.png){fig-align="center"}
+
+<br>
+
+![](figures/hh_sizes/hh_sizes_3134370_Niobrara_NE.png){fig-align="center"}
+
+<br>
+
+```{r Population Projections Table}
+#| echo: false
+load(file = "tables/tab_pop_increase/tab_pop_increase_Niobrara.Rda")
+
+colnames(tab_viz) <- c("", "1% Annual Growth Rate", "0.25% Annual Growth Rate")
+
+tab_viz <- rbind(tab_viz, c("New Housing Units Needed by 2050", "60", "15")) ## Using 2024 average HH size of 2.050
+
+kable(tab_viz, align = c("l", "c", "c", "c"), format.args = list(big.mark = ",")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), position = "left", full_width = F,
+                   fixed_thead = T, latex_options = c("striped", "HOLD_position", "repeat_header")) %>%
+  row_spec(row = 0, color = "white", background = "gray") %>%
+  row_spec(row = 4, color = "white", background = "gray") %>% 
+  column_spec(1:3, width = "12em")
+```
+
+<br>
+
+![](figures/pop_pyramids/3134370_Niobrara_NE.png)
 
 ## Affordable Housing Development {.unnumbered}
