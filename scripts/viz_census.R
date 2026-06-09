@@ -1134,4 +1134,204 @@ make_population_projections <- function(my_list) {
 
 make_population_projections(my_list = hist_data)
 
-##### Population Projection Tables #####
+##### Housing Cost Plots #####
+gc()
+rm(csv_path, plot_path)
+
+acs_pre20 <- fread(input = "data/census/acs/municipal/acs5_municipal_pre20.csv")
+acs_post20 <- fread(
+  input = "data/census/acs/municipal/acs5_municipal_post20.csv"
+)
+
+hh_costs_vars <- c(
+  "GEOID",
+  "year",
+  "median_household_income",
+  "median_homevalue",
+  "median_gross_rent"
+)
+
+hh_costs <- rbind(
+  acs_pre20 %>% select(hh_costs_vars),
+  acs_post20 %>% select(hh_costs_vars)
+) %>%
+  mutate(
+    GEOID = str_pad(string = GEOID, width = 7, side = "left", pad = "0")
+  ) %>%
+  filter(GEOID %in% target_geoids)
+
+make_hh_costs <- function(index, dat) {
+  df = left_join(index, dat, by = "GEOID") %>%
+    mutate(tag = paste(GEOID, NAME, STATE, sep = "_"))
+
+  start.time = Sys.time()
+
+  pb = txtProgressBar(min = 0, max = length(unique(df$NAME)), initial = 0)
+
+  names = unique(df$tag)
+
+  for (i in 1:length(names)) {
+    setTxtProgressBar(pb, i)
+
+    # progress(i, progress.bar = TRUE)
+
+    id_tag = names[i] %>%
+      gsub(., pattern = " ", replacement = "_") %>%
+      gsub(., pattern = ",_", replacement = "_") %>%
+      gsub(., pattern = "/", replacement = "_")
+    # id_tag
+
+    place_name = df %>%
+      filter(tag == id_tag) %>%
+      select(NAME) %>%
+      unique() %>%
+      last() %>%
+      as.character()
+
+    # id_tag = df %>% filter(NAME == i) %>% select(names_dat) %>% unique() %>% last()
+    plot_path = paste0("figures/hh_costs/hh_costs_", id_tag, ".png")
+
+    csv_path = paste0(
+      "data/census/processed/hh_costs/hh_costs_",
+      id_tag,
+      ".csv"
+    )
+
+    dat_viz = df %>%
+      filter(tag == id_tag) %>%
+      select(-c(GEOID, STATE, NAME, tag)) %>%
+      rename(
+        "Median Gross Rent" = median_gross_rent,
+        "Median Home Value" = median_homevalue,
+        "Median Household Income" = median_household_income
+      ) %>%
+      pivot_longer(
+        cols = !year,
+        names_to = "Statistic",
+        values_to = "Value"
+      ) %>%
+      mutate(
+        Statistic = as.factor(Statistic),
+        Value = case_when(
+          year == 2024 ~ (449.3 / 462.30) * Value,
+          year == 2023 ~ (449.3 / 449.3) * Value,
+          year == 2022 ~ (449.3 / 431.5) * Value,
+          year == 2021 ~ (449.3 / 399.2) * Value,
+          year == 2020 ~ (449.3 / 380.8) * Value,
+          year == 2019 ~ (449.3 / 375.8) * Value,
+          year == 2018 ~ (449.3 / 369.1) * Value,
+          year == 2017 ~ (449.3 / 360.3) * Value,
+          year == 2016 ~ (449.3 / 352.8) * Value,
+          year == 2015 ~ (449.3 / 348.3) * Value,
+          year == 2014 ~ (449.3 / 347.7) * Value,
+          year == 2013 ~ (449.3 / 342.0) * Value
+        ) %>%
+          round(digits = 0)
+      ) %>%
+      group_by(Statistic) %>%
+      mutate(
+        value_last = lag(Value, n = 1, order_by = Statistic),
+        pct_change = (Value - value_last) / value_last * 100,
+        `Percent Change` = case_when(
+          is.na(pct_change) ~ NA,
+          !is.na(pct_change) ~ paste(
+            format(round(pct_change, 2), nsmall = 2),
+            "%"
+          )
+        ),
+        Year = as.numeric(year),
+        y_midpoint = (Value + value_last) / 2,
+        Growth = case_when(
+          pct_change > 0 ~ 1,
+          pct_change < 0 ~ 0
+        ) %>%
+          as.factor()
+      )
+
+    write_csv(x = dat_viz, file = csv_path)
+
+    ### Plot HH Costs
+    dat_plot = ggplot(
+      data = dat_viz,
+      aes(
+        fill = Statistic,
+        color = Statistic,
+        group = Statistic,
+        label = Statistic
+      )
+    ) +
+      geom_point(
+        data = dat_viz %>% filter(Statistic != "Median Gross Rent"),
+        aes(x = year, y = Value, shape = Statistic),
+        size = 4
+      ) +
+      geom_line(
+        data = dat_viz %>% filter(Statistic != "Median Gross Rent"),
+        aes(x = year, y = Value),
+        size = 1,
+        show.legend = TRUE
+      ) +
+      geom_bar(
+        data = dat_viz %>% filter(Statistic == "Median Gross Rent"),
+        aes(x = year, y = Value * 50),
+        stat = "Identity"
+      ) +
+      geom_label(
+        aes(x = year, y = Value, label = paste0("$", scales::comma(Value))),
+        size = 4,
+        vjust = -0.5,
+        fill = "white",
+        show.legend = FALSE
+      ) +
+      scale_color_manual(
+        labels = c(
+          "Median Home Value",
+          "Median Household Income",
+          "Median Gross Rent"
+        ),
+        values = c(color1, color2, color3)
+      ) +
+      scale_fill_manual(
+        labels = c(
+          "Median Home Value",
+          "Median Household Income",
+          "Median Gross Rent"
+        ),
+        values = c(color1, color2, color3)
+      ) +
+      scale_x_continuous(breaks = seq(from = 2013, to = 2024, by = 1)) +
+      xlab("") +
+      ylab("") +
+      ylim(c(0, max(dat_viz$Value)) * 1.1) +
+      theme_minimal() +
+      labs(title = paste("Housing Costs in", place_name)) +
+      theme(
+        legend.title = element_blank(),
+        legend.direction = "horizontal",
+        legend.background = element_blank(),
+        legend.position = "none",
+        text = element_text(family = "Verdana", size = 24),
+        plot.title = element_text(hjust = 0.5),
+        plot.caption = element_text(hjust = 0, vjust = 10),
+        panel.grid.major.x = element_line(),
+        axis.text.x = element_text(vjust = 0),
+        axis.text.y = element_blank()
+      )
+
+    ggsave(
+      filename = plot_path,
+      plot = get_last_plot(),
+      width = 15,
+      height = 6,
+      unit = "in"
+    )
+  }
+
+  close(pb)
+
+  end.time <- Sys.time()
+  time.taken <- end.time - start.time
+  print(time.taken)
+}
+
+make_hh_costs(index = gaz, dat = hh_costs)
