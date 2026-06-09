@@ -157,7 +157,7 @@ kable(tab_housing_condition, align = c("l", "c", "c", "c"), format.args = list(b
   column_spec(3, width = "15em")
 ```
 
-We have several remarks on the housing conditions of Western Knox County:
+We have several remarks on the housing conditions in Niobrara:
 
 1.  The overwhelming majority of housing is in **average** condition:
     - About **90%** of the homes in Western Knox County are habitable and maintain a standard level of functionality. However, they may lack modern updates or show signs of aging and general wear.
