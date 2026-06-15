@@ -1289,7 +1289,7 @@ make_hh_costs <- function(index, dat) {
           "Median Household Income",
           "Median Gross Rent"
         ),
-        values = c(color1, color2, color3)
+        values = c(color1, sapphire, ruby)
       ) +
       scale_fill_manual(
         labels = c(
@@ -1297,7 +1297,7 @@ make_hh_costs <- function(index, dat) {
           "Median Household Income",
           "Median Gross Rent"
         ),
-        values = c(color1, color2, color3)
+        values = c(color1, sapphire, ruby)
       ) +
       scale_x_continuous(breaks = seq(from = 2013, to = 2024, by = 1)) +
       xlab("") +
@@ -1305,6 +1305,163 @@ make_hh_costs <- function(index, dat) {
       ylim(c(0, max(dat_viz$Value)) * 1.1) +
       theme_minimal() +
       labs(title = paste("Housing Costs in", place_name)) +
+      guides(shape = "none") +
+      theme(
+        legend.title = element_blank(),
+        legend.direction = "horizontal",
+        legend.background = element_blank(),
+        legend.position = "top",
+        text = element_text(family = "Verdana", size = 24),
+        plot.title = element_text(hjust = 0.5),
+        plot.caption = element_text(hjust = 0, vjust = 10),
+        panel.grid.major.x = element_line(),
+        axis.text.x = element_text(vjust = 0),
+        axis.text.y = element_blank()
+      )
+
+    ggsave(
+      filename = plot_path,
+      plot = get_last_plot(),
+      width = 15,
+      height = 6,
+      unit = "in"
+    )
+  }
+
+  close(pb)
+
+  end.time <- Sys.time()
+  time.taken <- end.time - start.time
+  print(time.taken)
+}
+
+make_hh_costs(index = gaz, dat = hh_costs)
+
+##### Median Age #####
+gc()
+rm(csv_path, plot_path)
+
+median_age_vars <- c("GEOID", "year", "median_age")
+
+median_age <- rbind(
+  acs_pre20 %>% select(median_age_vars),
+  acs_post20 %>% select(median_age_vars)
+) %>%
+  mutate(
+    GEOID = str_pad(string = GEOID, width = 7, side = "left", pad = "0")
+  )
+
+make_median_age <- function(index, dat) {
+  df = left_join(index, dat, by = "GEOID") %>%
+    mutate(tag = paste(GEOID, NAME, STATE, sep = "_"))
+
+  start.time = Sys.time()
+
+  pb = txtProgressBar(min = 0, max = length(unique(df$NAME)), initial = 0)
+  names = unique(df$tag)
+
+  for (i in 1:length(names)) {
+    setTxtProgressBar(pb, i)
+
+    id_tag = names[i] %>%
+      gsub(., pattern = " ", replacement = "_") %>%
+      gsub(., pattern = ",_", replacement = "_") %>%
+      gsub(., pattern = "/", replacement = "_")
+
+    place_name = df %>%
+      filter(tag == id_tag) %>%
+      select(NAME) %>%
+      unique() %>%
+      last() %>%
+      as.character()
+
+    plot_path = paste0("figures/median_age/median_age_", id_tag, ".png")
+
+    csv_path = paste0(
+      "data/census/processed/median_age/median_age",
+      id_tag,
+      ".csv"
+    )
+
+    dat_viz = df %>%
+      filter(tag == id_tag) %>%
+      select(year, median_age) %>%
+      pivot_longer(
+        cols = !year,
+        names_to = "Statistic",
+        values_to = "Value"
+      ) %>%
+      mutate(Statistic = as.factor(Statistic)) %>%
+      group_by(Statistic) %>%
+      mutate(
+        value_last = lag(Value, n = 1, order_by = Statistic),
+        pct_change = (Value - value_last) / value_last * 100,
+        `Percent Change` = case_when(
+          is.na(pct_change) ~ NA,
+          !is.na(pct_change) ~ paste(
+            format(round(pct_change, 2), nsmall = 2),
+            "%"
+          )
+        ),
+        Year = as.numeric(year),
+        y_midpoint = (Value + value_last) / 2,
+        Growth = case_when(
+          pct_change > 0 ~ 1,
+          pct_change < 0 ~ 0
+        ) %>%
+          as.factor()
+      )
+
+    write_csv(x = dat_viz, file = csv_path)
+
+    dat_plot = ggplot(
+      data = dat_viz,
+      aes(x = Year, y = Value)
+    ) +
+      geom_bar(
+        data = dat_viz %>%
+          filter(
+            !is.na(pct_change)
+          ),
+        aes(x = Year - 0.5, y = pct_change * 100, fill = Growth),
+        alpha = 1.00,
+        stat = "identity"
+      ) +
+      geom_line(
+        aes(x = Year, y = scale(Value) * 1000),
+        color = "black",
+        size = 1.5
+      ) +
+      geom_label(
+        aes(
+          x = Year - 0.5,
+          y = pct_change * 100,
+          label = paste0(round(pct_change, digits = 2), "%"),
+          color = Growth
+        ),
+        fill = "white",
+        size = 4,
+        show.legend = FALSE
+      ) +
+      scale_color_manual(breaks = c("0", "1"), values = c(ruby, sapphire)) +
+      scale_fill_manual(breaks = c("0", "1"), values = c(ruby, sapphire)) +
+      geom_point(
+        aes(x = Year, y = scale(Value) * 1000),
+        color = "black",
+        size = 3
+      ) +
+      geom_label(
+        aes(x = Year, y = scale(Value) * 1000, label = scales::comma(Value)),
+        size = 8,
+        color = "black",
+        fill = "white"
+      ) +
+      xlab("") +
+      ylab("") +
+      scale_x_continuous(breaks = seq(from = 2013, to = 2024, by = 1)) +
+      # ylim(c(0, max(dat_viz$Population)))+
+      theme_minimal() +
+      labs(title = paste("Median Age in", place_name)) +
       theme(
         legend.title = element_blank(),
         legend.direction = "horizontal",
@@ -1334,4 +1491,206 @@ make_hh_costs <- function(index, dat) {
   print(time.taken)
 }
 
-make_hh_costs(index = gaz, dat = hh_costs)
+make_median_age(index = gaz, dat = median_age)
+
+##### Housing Needs by Income #####
+hh_inc_vars <- c(
+  "GEOID",
+
+  "hh_below10",
+  "hh_10k_15k",
+  "hh_15k_20k",
+  "hh_20k_25k",
+  "hh_25k_30k",
+  "hh_30k_35k",
+  "hh_35k_40k",
+  "hh_40k_45k",
+  "hh_45k_50k",
+  "hh_50k_60k",
+  "hh_60k_75k",
+  "hh_75k_100k",
+  "hh_100k_125k",
+  "hh_125k_150k",
+  "hh_150k_200k",
+  "hh_above200k",
+
+  "hv_below10k",
+  "hv_10k_15k",
+  "hv_15k_20k",
+  "hv_20k_25k",
+  "hv_25k_30k",
+  "hv_35k_40k",
+  "hv_40k_50k",
+  "hv_50k_60k",
+  "hv_60k_70k",
+  "hv_70k_80k",
+  "hv_80k_90k",
+  "hv_90k_100k",
+  "hv_100k_125k",
+  "hv_125k_150k",
+  "hv_150k_175k",
+  "hv_175k_200k",
+  "hv_200k_250k",
+  "hv_250k_300k",
+  "hv_300k_400k",
+  "hv_400k_500k",
+  "hv_500k_750k",
+  "hv_750_1m",
+  "hv_1m_1.5m",
+  "hv_1.5m_2m",
+  "hv_2m_above",
+
+  "total_housing_units"
+)
+
+hh_inc_data <- acs_post20 %>%
+  filter(GEOID %in% target_geoids, year == 2023) %>%
+  select(hh_inc_vars) %>%
+  mutate(
+    GEOID = str_pad(string = GEOID, width = 7, side = "left", pad = "0"),
+    prop_hh_25k_below = (hh_below10 + hh_10k_15k + hh_15k_20k + hh_20k_25k) /
+      total_housing_units,
+    prop_hh_25k_50k = (hh_25k_30k +
+      hh_30k_35k +
+      hh_35k_40k +
+      hh_40k_45k +
+      hh_45k_50k) /
+      total_housing_units,
+    prop_hh_50k_75k = (hh_50k_60k + hh_60k_75k) / total_housing_units,
+    prop_hh_75k_100k = (hh_75k_100k) / total_housing_units,
+    prop_hh_100k_150k = (hh_100k_125k + hh_125k_150k) / total_housing_units,
+    prop_150k_above = (hh_150k_200k + hh_above200k) / total_housing_units
+  ) %>%
+  pivot_longer(cols = !GEOID, names_to = "Description", values_to = "Value") %>%
+  mutate(
+    Type = case_when(
+      Description == "population_2020" ~ "population",
+      grepl(pattern = "hh", x = Description) &
+        !grepl(pattern = "prop", x = Description) ~ "Households",
+      grepl(pattern = "hv", x = Description) ~ "Number of Affordable Homes",
+      grepl(pattern = "prop", x = Description) ~ "proportion"
+    )
+  ) %>%
+  filter(
+    Type %in% c("Households", "Number of Affordable Homes"),
+    Description != "hh"
+  )
+
+hh_inc_data$vbin <- c(
+  rep("<$25,000", times = 4),
+  rep("$25,000-$50,000", times = 5),
+  rep("$50,000-$100,000", times = 3),
+  rep(">$100,000", times = 4),
+
+  ### Remember: these need to be twice the value of the incomes
+  rep("<$25,000", times = 7),
+  rep("$25,000-$50,000", times = 5),
+  rep("$50,000-$100,000", times = 4),
+  rep(">$100,000", times = 9)
+)
+
+hh_inc_data_out <- hh_inc_data %>%
+  group_by(vbin, Type, GEOID) %>%
+  reframe(sum_values = sum(Value)) %>%
+  pivot_wider(id_cols = vbin, names_from = Type, values_from = sum_values) %>%
+  mutate(Surplus = `Number of Affordable Homes` - `Households`) %>%
+  pivot_longer(cols = !vbin, names_to = "Description", values_to = "Value")
+
+make_hh_needs <- function(index, dat) {
+  df = index %>% mutate(tag = paste(GEOID, NAME, STATE, sep = "_"))
+
+  start.time = Sys.time()
+
+  pb = txtProgressBar(min = 0, max = length(unique(df$NAME)), initial = 0)
+
+  names = unique(df$tag)
+
+  for (i in 1:length(names)) {
+    setTxtProgressBar(pb, i)
+
+    id_tag = names[i] %>%
+      gsub(., pattern = " ", replacement = "_") %>%
+      gsub(., pattern = ",_", replacement = "_") %>%
+      gsub(., pattern = "/", replacement = "_")
+
+    place_name = df %>%
+      filter(tag == id_tag) %>%
+      select(NAME) %>%
+      unique() %>%
+      last() %>%
+      as.character()
+
+    plot_path = paste0("figures/hh_needs/hh_needs_", id_tag, ".png")
+
+    csv_path = paste0(
+      "data/census/processed/hh_needs/hh_needs",
+      id_tag,
+      ".csv"
+    )
+
+    dat_viz = dat
+
+    write_csv(x = dat_viz, file = csv_path)
+
+    dat_plot = ggplot(
+      data = dat_viz,
+      aes(
+        x = factor(
+          vbin,
+          levels = c(
+            "<$25,000",
+            "$25,000-$50,000",
+            "$50,000-$100,000",
+            ">$100,000"
+          )
+        ),
+        y = Value,
+        fill = as.factor(Description)
+      )
+    ) +
+      geom_bar(stat = "identity", position = position_dodge()) +
+      geom_text(
+        aes(label = Value),
+        position = position_dodge(width = 0.9),
+        vjust = -1,
+        size = 6
+      ) +
+      scale_fill_manual(values = c(color2, sapphire, ruby)) +
+      xlab("Household Income") +
+      ylab("") +
+      ylim(
+        min = min(hh_inc_data_out$Value * 1.1),
+        max = max(hh_inc_data_out$Value * 1.1)
+      ) +
+      labs(title = paste("Housing Needs in", place_name)) +
+      theme_minimal() +
+      theme(
+        legend.title = element_blank(),
+        legend.direction = "horizontal",
+        legend.background = element_blank(),
+        legend.position = "top",
+        text = element_text(family = "Verdana", size = 24),
+        plot.title = element_text(hjust = 0.5),
+        plot.caption = element_text(hjust = 0, vjust = 10),
+        panel.grid.major.x = element_line(),
+        axis.text.x = element_text(vjust = 0),
+        axis.text.y = element_blank()
+      )
+
+    ggsave(
+      filename = plot_path,
+      plot = get_last_plot(),
+      width = 15,
+      height = 6,
+      unit = "in"
+    )
+  }
+
+  close(pb)
+
+  end.time <- Sys.time()
+  time.taken <- end.time - start.time
+  print(time.taken)
+}
+
+make_hh_needs(index = gaz, dat = hh_inc_data_out)

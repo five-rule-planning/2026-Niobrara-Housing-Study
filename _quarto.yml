@@ -3,17 +3,6 @@ project:
 
 manuscript:
   article: housingstudy.qmd
-  # title: |
-  #   Niobrara Housing Study
-  # title-short: Niobrara Housing Study # title-short is used in the pdf head
-  # output-file: 2026_niobrara_housing_study # outputs: docs/TufteStyledBook.pdf
-  # author: Bobbi Pettit, AICP and Jordan Duffin Wong, Ph.D
-  # publisher: FIVE RULE Rural Planning
-  # date-format: 06, 2026
-  # license: "CC BY"
-  # downloads: [pdf]
-  # favicon: Images/five_rule_logo.png
-# bibliography: references.bib
 pdf-engine: xelatex
 
 format:
@@ -26,6 +15,3 @@ format:
 
 execute:
   freeze: true
-
-
-

@@ -107,6 +107,11 @@ ggsave(
   unit = "in"
 )
 
+write_sf(
+  obj = housing_condition,
+  dsn = "data/shapefiles/shp-housing-condition/shp-housing-condition.shp"
+)
+
 sum_housing_condition <- housing_condition %>%
   mutate(area = as.numeric(st_area(.) * 0.002471054)) %>%
   as.data.frame(.) %>%
@@ -128,6 +133,7 @@ tab_housing_condition <- housing_condition %>%
     )
   )
 save(tab_housing_condition, file = "tables/tab_housing_conditions_all.Rda")
+
 
 ##### Housing Age -- All Parcels #####
 housing_age <- read_sf(
@@ -180,6 +186,11 @@ ggplot(data = housing_age) +
     axis.text.x = element_blank(),
     axis.text.y = element_blank()
   )
+
+write_sf(
+  obj = housing_age,
+  dsn = "data/shapefiles/shp-housing-age/shp-housing-age.shp"
+)
 
 ggsave(
   filename = "figures/housing_age_all.png",

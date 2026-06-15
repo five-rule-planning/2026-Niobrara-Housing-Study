@@ -1,0 +1,13 @@
+vbin,Description,Value
+"$25,000-$50,000",Households,81
+"$25,000-$50,000",Number of Affordable Homes,50
+"$25,000-$50,000",Surplus,-31
+"$50,000-$100,000",Households,38
+"$50,000-$100,000",Number of Affordable Homes,42
+"$50,000-$100,000",Surplus,4
+"<$25,000",Households,31
+"<$25,000",Number of Affordable Homes,23
+"<$25,000",Surplus,-8
+">$100,000",Households,20
+">$100,000",Number of Affordable Homes,9
+">$100,000",Surplus,-11

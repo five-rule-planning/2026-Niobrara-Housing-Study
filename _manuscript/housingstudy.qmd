@@ -15,18 +15,17 @@ pdf-engine: xelatex
 format:
   html:
     number-sections: true
-    # linkcolor: Teal
     mainfont: "Verdana"
     sansfont: "Verdana"
     toc-location: left
     toc-title: "Contents"
-    output-file: housingstudy
+    output-file: index
   pdf:
     mainfont: "Verdana"
     sansfont: "Verdana"
-    # linkcolor: Teal
     toc-depth: 2
     output-file: 2026_niobrara_housing_study
+    notebook-links: false
 ---
 
 ```{r Document Setup}
@@ -45,10 +44,10 @@ library(sf) # For shapefile manipulation
 library(tidyverse) # For a variety of R data manipulations
 
 knitr::opts_chunk$set(
-    out.width = "100%",
-    fig.width = 15,
-    fig.asp = 0.618,
-    fig.align = "center"
+  out.width = "100%",
+  fig.width = 15,
+  fig.asp = 0.618,
+  fig.align = "center"
 )
 
 extrafont::loadfonts(quiet = TRUE)
@@ -62,11 +61,25 @@ color3 <- "#27C3CF"
 color4 <- "#137A7F"
 color5 <- "#E12885"
 color6 <- "#EC79A0"
+
+### Initialize Shapefiles
+etj <- read_sf(
+  dsn = "data/shapefiles/shp-municipal-etj/shp-municipal-etj.shp"
+) %>%
+  st_transform(crs = 4326) %>%
+  filter(NAME == "Niobrara")
+
+floodplain <- read_sf(
+  dsn = "data/shapefiles/shp-floodplain/shp-floodplain.shp"
+) %>%
+  st_transform(crs = 4326) %>% 
+  st_intersection(x = etj, y = .) %>% 
+  select(geometry)
 ```
 
 ## Purpose {.unnumbered}
 
-Upon completion of the Study, the community’s leadership and housing stakeholders will move forward by continuing to take the following steps.
+Upon completion of the Study, the community’s leadership and housing stakeholders should move forward by continuing to take the following steps.
 
 (1) Seek Partnerships: Continue working with other agencies, organizations, and neighboring jurisdictions to leverage resources.
 (2) Explore Funding Opportunities: The Federal and State governments understand that the lack of affordable housing is affecting the entire country. As such, Federal and State programs continue to be made available to governments committed to solving housing problems on a local scale. With the knowledge of the state of their community, they must stay informed about programs that provide financial resources or incentives for affordable housing and infrastructure improvements.
@@ -78,9 +91,9 @@ The Housing Study documents the conditions, statuses, and needs for housing in N
 
 ## Housing Condition and Age {.unnumbered}
 
-The status and the condition of the residential structures in Knox County are documented by the Knox County Property Assessor. They use five ratings:[^01-all-parcels-1]
+The status and the condition of the residential structures in Knox County are documented by the Knox County Property Assessor. They use five ratings:[^1]
 
-[^01-all-parcels-1]: The Assessor also calculates intermediate ratings, e.g. "Worn Out - Badly Worn."
+[^1]: The Assessor also calculates intermediate ratings, e.g. "Worn Out - Badly Worn."
 
 1.  **Worn Out**: homes that are in a state of severe disrepair or uninhabitable condition.
 
@@ -94,7 +107,7 @@ The status and the condition of the residential structures in Knox County are do
 
 The map below displays the housing conditions in Niobrara.
 
-:::{.content-hidden when-format="pdf"}:::
+::: {.content-hidden when-format="pdf"}
 ```{r Viz Housing Condition}
 #| warning: false
 #| message: false
@@ -128,23 +141,39 @@ housing_condition <- read_sf(
   ) %>%
   st_transform(crs = 4326)
 
-mapview::mapview(housing_condition,
-                 zcol = "Condition",
-                 map.types = c("CartoDB.Positron", "Esri.WorldImagery"),
-                 col.regions = c("#3D0C02", "#79443B", "#FF0800", "#FF7F50", "#FFBF00", "#C0FF00", "#32CD32", "#01796F", "#007FFF"),
-                 alpha.regions = c(0.75),
-                 lwd = 1.5,
-                 layer.name = "Housing Condition")
+mapview::mapview(
+  housing_condition,
+  zcol = "Condition",
+  map.types = c("CartoDB.Positron", "Esri.WorldImagery"),
+  col.regions = c(
+    "#3D0C02",
+    "#79443B",
+    "#FF0800",
+    "#FF7F50",
+    "#FFBF00",
+    "#C0FF00",
+    "#32CD32",
+    "#01796F",
+    "#007FFF"
+  ),
+  alpha.regions = c(0.75),
+  lwd = 1.5,
+  layer.name = "Housing Condition"
+) +
+  mapview::mapview(
+    floodplain,
+    col.regions = "#007FFF",
+    alpha.regions = 0.25,
+    layer.name = "Flood Hazard Layer"
+  )
 ```
 :::
 
-:::{.content-hidden when-format="html"}:::
-![](figures/housing_conditions_all.png){fig-align="center"}
+::: {.content-hidden when-format="html"}
+![](figures/housing_condition.png){fig-align="center"}
 :::
 
 <br>
-
-We tabulate the condition of the residential housing structures across Niobrara as well.
 
 ```{r Tabulate Housing Conditions}
 #| echo = FALSE
@@ -154,37 +183,86 @@ kable(tab_housing_condition, align = c("l", "c", "c", "c"), format.args = list(b
   kable_styling(bootstrap_options = c("striped", "hover"), position = "left", full_width = F,
                    fixed_thead = T, latex_options = c("striped", "HOLD_position", "repeat_header")) %>%
   row_spec(row = 0, color = "white", background = "gray") %>%
-  column_spec(3, width = "15em")
+  column_spec(3, width = "12em")
 ```
 
-We have several remarks on the housing conditions of Western Knox County:
+We have several remarks on the housing conditions in Niobrara:
 
 1.  The overwhelming majority of housing is in **average** condition:
-    - About **90%** of the homes in Western Knox County are habitable and maintain a standard level of functionality. However, they may lack modern updates or show signs of aging and general wear.
-
-    - This indicates a stable but aging housing stock, which eventually requires investment in maintenance or modernization.
+    - About **80%** of the homes in Niobrara are habitable and maintain a standard level of functionality. However, they may lack modern updates or show signs of aging and general wear.
 2.  Very few homes are **worn out**:
-    - Only **0.10%** (one tenth of one percent) of homes are in a state of severe disrepair or uninhabitable condition.[^01-all-parcels-2] This reflects a minimum standard of basic housing adequacy across Western Knox County, with little evidence of total structural abandonment.
+    - Only **one** home is in a state of severe disrepair or uninhabitable condition.[^2] This reflects a minimum standard of basic housing adequacy in Niobrara, with little evidence of total structural abandonment.
 
     - It also suggests that code enforcement or demolition efforts may be effective in preventing extreme blight.
-3.  A small proportion of houses are **badly worn**:
-    - About **5%** of the housing stock is assessed as "badly worn" or "badly worn - average." These homes may have serious deficiencies in systems (such as roofing, plumbing, or electrical foundation) or visible deterioration.
+3.  A very small proportion of houses are **badly worn**:
+    - About **1.44%** of the housing stock is assessed as "badly worn" or "badly worn - average." These homes may have serious deficiencies in systems (such as roofing, plumbing, or electrical foundation) or visible deterioration.
 
     - This group represents homes that are likely still occupied but nearing the point where repairs and renovation are critical.
 4.  A similarly small proportion of houses are **good or better**:
-    - Only about **5%** of homes are rated better than "average," suggesting a small segment of housing stock that is newer, well-maintained, or recently renovated. This could indicate limited recent investment in high-quality residential development or upgrades.
+    - Only about **14%** of homes are rated better than "average," suggesting a small segment of housing stock that is particularly well-maintained, or recently renovated. This could indicate limited recent investment in high-quality residential development or upgrades.
 
     - It also highlights the need for incentives and programs to support home improvement or new building efforts.
 
-[^01-all-parcels-2]: According to the property assessor, at least.
+[^2]: According to the property assessor, at least.
 
-**Overall Implications for Housing Policy**: the data paint a picture of a largely-functional housing stock, but one that is aging and moderately deteriorated. The low percentage of "good" and share of "badly worn" houses suggests that regions across Western Knox County may benefit from targeted housing rehabilitation programs, especially centered on owner-occupied homes in poor condition. Grant funding an development efforts could be focused on preventing the decline of average-rated homes while prioritizing repairs for the five percent of badly-worn stock.
+````{=html}
+<!-- ## Building Footprints {.unnumbered}
 
-The Knox County Property Assessor also documents the age of housing structures. Knowing the age of community housing stock is important because the workable lifespan of a typical house is about one hundred years. Many of the homes in Western Knox County are more than a century old, indicating that action is necessary to keep the overall housing stock up to date.
+::: {.content-hidden when-format="pdf"}
+```{r Viz Building Footprint Conditions}
+#| echo: false
+fp <- read_sf(
+  dsn = "data/shapefiles/shp-building-footprints/shp-building-footprints.shp"
+) %>%
+  st_transform(crs = 4326) %>%
+  st_intersection(x = etj, y = .) %>%
+  st_intersection(x = ., y = housing_condition) %>%
+  select(Parcel_ID, Condition, geometry)
+
+mapview::mapview(
+  fp,
+  zcol = "Condition",
+  map.types = c("CartoDB.Positron", "Esri.WorldImagery"),
+  col.regions = c(
+    "#3D0C02",
+    "#79443B",
+    "#FF0800",
+    "#FF7F50",
+    "#FFBF00",
+    "#C0FF00",
+    "#32CD32",
+    "#01796F",
+    "#007FFF"
+  ),
+  alpha.regions = c(0.75),
+  lwd = 1.5,
+  layer.name = "Building Footprint Condition"
+) +
+  mapview::mapview(
+    floodplain,
+    col.regions = "#007FFF",
+    alpha.regions = 0.25,
+    layer.name = "Flood Hazard Layer"
+  )
+```
+::: -->
+````
 
 <br>
 
-:::{.content-hidden when-format="pdf"}:::
+**Overall Implications for Housing Policy**: Niobrara's housing stock is in reasonably good condition. Niobrara's citizens have done a good job of maintaining their residences. For the small amount of housing stock that is rated worse than "average," Niobrara may benefit from targeted housing rehabilitation programs centered on owner-occupied homes in poor condition. Grant funding and development efforts can be focused on preventing the decline of average-rated homes while prioritizing repairs for the five percent of below-average stock.
+
+The Knox County Property Assessor also documents the age of housing structures. Knowing the age of community housing stock is important because the workable lifespan of a typical house is about one hundred years. Because Niobrara moved to its current location in the 1970s, most of housing stock is much newer than the stock across the rest of Western Knox County. Of note:[^3]
+
+[^3]: See [the Village's History page.](https://niobrarane.com/history/)
+
+> The mighty Missouri again invaded Niobrara in April of 1952 and much of the town and the surrounding area was flooded. This record flow came shortly before the completion of the Missouri River dams, citizens were relieved that flooding along the Missouri would be a thing of the past and life could continue at a more or less routine pace.A big event of the 1950’s was the Centennial Celebration of June 16 – 17, 1956. There were many events leading up to the two day celebration which was attended by an estimated 20,000 people. Later, in the 1950’s and in the 1960’s, it became apparent that the mighty Missouri would, again, influence Niobrara history. Silt from the Niobrara River, which began to accumulate in the river bed, raised the ground water level in Niobrara and the surrounding area. Many basements became flooded requiring constant pumping and it was apparent that the problem would continue to intensify. By 1969, community officials began to look for solutions and a second move.
+>
+> Funds were appropriated by Congress to pay a sizable portion of the cost of the move. Site preparation began in September of 1973 and was completed in April of 1974. Next came the water, sewer, storm sewer, paving, water wells and water storage tank. The sale of residential lots followed  in the summer of 1974 and residential construction moved forward at a fast pace. By the end of 1977, the move was nearly completed. The 1980 census showed 420 and 213 homes in Niobrara. 1981 marked the 112th anniversary of the original settlement and was celebrated with a historical pageant, parade and other activitiesThrough volunteer efforts, a nine-hole grass greens golf course was completed on the old town site. The Niobrara State Park was relocated, suffering the same fate as the old town. Niobrara’s history can best be summarized as being destined by the mighty Missouri on whose banks it was founded and from whose reach it has continuously tried to escape.
+
+<br>
+
+::: {.content-hidden when-format="pdf"}
 ```{r Viz Housing Age}
 housing_age <- read_sf(
   dsn = "data/shapefiles/shp-parcel-inventory/shp-parcel-inventory.shp"
@@ -220,23 +298,31 @@ mapview::mapview(
   map.types = c("CartoDB.Positron", "Esri.WorldImagery"),
   col.regions = c(
       "#3D0C02",
-      "#79443B",
       "#FF0800",
       "#FF7F50",
       "#FFBF00",
       "#C0FF00",
       "#32CD32",
-      "#01796F",
-      "#007FFF"
+      "#01796F"
   ),
   alpha.regions = c(0.75),
   lwd = 1.5,
   layer.name = "Housing Age"
-)
+)+
+    mapview::mapview(
+    floodplain,
+    col.regions = "#007FFF",
+    alpha.regions = 0.25,
+    layer.name = "Flood Hazard Layer"
+  )
 ```
 :::
 
 <br>
+
+::: {.content-hidden when-format="html"}
+![](figures/housing_age.png){fig-align="center"}
+:::
 
 ```{r Tabulate Housing Age}
 #| echo: false
@@ -246,24 +332,30 @@ kable(tab_housing_age, align = c("l", "c", "c", "c"), format.args = list(big.mar
   kable_styling(bootstrap_options = c("striped", "hover"), position = "left", full_width = F,
                    fixed_thead = T, latex_options = c("striped", "HOLD_position", "repeat_header")) %>%
   row_spec(row = 0, color = "white", background = "gray") %>%
-  column_spec(3, width = "15em")
+  column_spec(3, width = "12em")
 ```
 
-:::{.content-hidden when-format="html"}:::
-![](figures/housing_age_all.png){fig-align="center"}
-:::
+<br>
+
+While a number of residential properties predate the 1970s relocation, the vast majority (**80%**) of Niobrara's homes were built in the last half-century. Because the typical lifespan of a single-family housing unit is roughly 100 years, efforts for residents in homes from the relocation would do well to continue maintaining their properties while keeping an eye on possible deterioration.
 
 ## Community Housing Needs {.unnumbered}
 
-(context: the town literally moved in 1976!)
+Because of town relocation, Niobrara's overall population trends should be considered in the context of patterns dating back to the 1970s and 1980s. Although the Village population is declined from its original (post-move) high point in the 1980s, it has remained remarkably consistent since the 1990s, staying between 360 and 380 people.
 
 ![](figures/historical_trends/Niobrara.png){fig-align="center"}
 
 <br>
 
+We present several possible population scenarios for Niobrara. They range from one-percent annual growth over the next 25 years to one-percent annual decline. Although many factors – some outside of the control of Niobrara residents – influence which scenarios will become reality, many communities express that a target scenario of 0.25% annual growth is a policy goal. Achieving this goal will require Niobrara to maintain and update its housing stock. Allowing the housing stock to stagnate will make the population decline scenarios more likely.
+
 ![](figures/pop_projections/Niobrara.png){fig-align="center"}
 
 <br>
+
+The Census defines a family as any two or more people (not necessarily including a householder) residing together and related by birth, marriage, or adoption. A household consists of one or more persons residing together who may or may not be related by birth, marriage, or adoption. Multiple families can reside in the same household.
+
+We show how the average family and household sizes in Niobrara have changed -- or rather, not really changed -- over the past decade. Both the average family size and average houehold size have increased by marginal amounts. This makes sense given how little the Village's overall population has changed in recent years.
 
 ![](figures/hh_sizes/fam_sizes_3134370_Niobrara_NE.png){fig-align="center"}
 
@@ -272,6 +364,10 @@ kable(tab_housing_age, align = c("l", "c", "c", "c"), format.args = list(big.mar
 ![](figures/hh_sizes/hh_sizes_3134370_Niobrara_NE.png){fig-align="center"}
 
 <br>
+
+We can use these values to project Niobrara's housing needs over the next several decades. Using the 2024 ACS estimate of 2.05 persons per household, we estimate that, in the 0.25% growth rate scenario Niobrara will need 15 additional houses by 2050, or about one houses every two-to-three years. In the more ambitious 1% growth rate scenario, Niobrara will need 60 additional houses, or about five houses every two years.
+
+These projections do not reflect the necessity of replacing aging housing stock in Niobrara. By 2050, the majority of Niobrara homes will be at or past half of their expected lifespan. In addition to adding new housing units, developers and village officials need a path to turning over existing aging units. In the extreme growth scenario, Niobrara will likely have successfully constructed a number of new housing units where none currently exist and have successfully renovated or replaced aging units.
 
 ```{r Population Projections Table}
 #| echo: false
@@ -291,6 +387,70 @@ kable(tab_viz, align = c("l", "c", "c", "c"), format.args = list(big.mark = ",")
 
 <br>
 
+Niobrara community leaders should also pay close attention to the community's demographic distribution when prioritizing housing strategies.
+
+![](figures/median_age/median_age_3134370_Niobrara_NE.png)
+
+<br>
+
 ![](figures/pop_pyramids/3134370_Niobrara_NE.png)
 
-## Affordable Housing Development {.unnumbered}
+Based on American Community Survey data, the village has a healthy share of residents over the age of 60. If (or as) the share of Niobrara's residents continues to age, Niobrara homeowners should ensure that homes and public facilities maintain accessibility. Furthermore, if the village is to attract or maintain younger cohorts, it may be wise to pursue the construction of new (and rehabilitation of existing) single-family homes.
+
+## Affordable Housing Assessment {.unnumbered}
+
+The affordability and accessibility of housing at the right value are paramount. Census data indicate that home values in Niobrara have slowly risen over the past decade. Unfortunately, household incomes have actually fallen over that same time span, possibly due to flooding in 2019 or the COVID-19 pandemic. This indicates that more Niobrara residents, on average, risk being priced out of being able to purchase new homes.
+
+![](figures/hh_costs/hh_costs_3134370_Niobrara_NE.png)
+
+Finally, we show that the current housing inventory is not suited to the income distribution of Niobrara residents. In general, a home is affordable if its value is no more than twice the household income of its resident. For instance, if a household’s income is \$50,000, then the value of their home should be approximately (but not more than) \$100,000. We find that Niobrara has a shortage of 31 units for households eraning at the median income.
+
+![](figures/hh_needs/hh_needs_3134370_Niobrara_NE.png)
+
+Therefore, when pursuing new housing development, Niobrara needs to emphasize homes whose values address the shortage at the median of the income distribution. While they homes can be costly to produce, doing so will go a long way to remedying the general imbalance between home values and household income capacities.
+
+## Appendix {.appendix .unnumbered}
+
+There are three kinds of data used to generate this Housing Study: community engagement data, socioeconomic data, and map and geospatial data. This appendix documents how these data were acquired, processed, and presented. Finally, it also summarizes the technical procedures used to generate the tangible document of the study.
+
+Please refer any technical questions to [jordan\@fiveruleplanning.com](jordan@fiveruleplanning.com).
+
+## Community Engagement Process {.appendix .unnumbered}
+
+[we haven't done this yet]
+
+## Socioeconomic Data Curation {.appendix .unnumbered}
+
+FIVE RULE Rural Planning curated data from a number of sources. In addition to the Community Engagement portion (above), we collected data from the following sources:
+
+1. 2025 U.S. TIGER/Line Shapefiles.
+2. The Knox County, Nebraska Property Assessor.
+3. The University of Nebraska-Omaha Data Center.
+4. The Decennial Census.
+5. The 2013 through 2023 American Community Survey Five-Year Estimates.
+
+## Map Generation {.appendix .unnumbered}
+We relied primarily on two softwares to generate maps for this document. For the shapefile generation and curation, we used [R Version 4.5.1](https://www.r-project.org) and the [Positron IDE 2026.06.0 Build 211](https://positron.posit.co/about.html).
+
+## Document Generation {.appendix .unnumbered}
+This document was compiled and generated using the [Quarto](https://quarto.org) publishing sytem. All of the source code can be found at the accompanying [GitHub page](https://github.com/five-rule-planning/2026-Niobrara-Housing-Study).
+
+## About the Authors {.appendix .unnumbered}
+
+### Bobbi Pettit, AICP {.appendix .unnumbered}
+Bobbi has more than 25 years of experience working with plan creation, plan implementation, and economic development projects across rural Nebraska and Kansas. 
+ 
+Bobbi grew up in Merna, Nebraska, and has experienced firsthand what it’s like to live in a small town. Her passion for helping rural communities runs deep. She founded FIVE RULE Rural Planning (FRRP), in 2018. She earned a Master of Arts in Community & Regional Planning from the University of Nebraska-Lincoln and has been a member of the American Institute of Certified Planners (AICP) since 2011.  
+ 
+Before starting FRRP, Bobbi served as Assistant Development Services Director, City of Kearney; Community Planner, South-Central Economic Development District (SCEDD); Deputy Master Planner, Nebraska Military Department; and 3rd District Staffer for Congressman Tom Osborne.
+
+During her tenure with the City of Kearney, Bobbi oversaw the Planning Commission, Development Review Team, and Chief Building Official. In 2009, Bobbi led 50 troops to Camp Liberty, Iraq, as a Platoon Leader for the Nebraska Army National Guard.  
+
+### Jordan Duffin Wong, Ph.D {.appendix .unnumbered}
+Jordan brings eight years of cutting-edge computational social science and spatial econometric training to the FIVE RULE team, applying his expertise to curating planning documents for Nebraska communities.  
+
+Jordan grew up in Kearney, Nebraska, and returned to join FRRP in the summer of 2025. Before, Jordan held positions with Washington University in St. Louis, the Weidenbaum Center on the Economy, Government, and Public Policy, the St. Louis Zoning Atlas, and the Nebraska Bureau of Business Research (BBR).
+
+At BBR, Jordan was a contributor on the inaugural Rural Prosperity Nebraska Thriving Index, and has co-authored numerous scholarly articles on local government, published in both peer-reviewed journals and academic conference proceedings.
+
+Jordan completed two Bachelor of Arts Degrees, in Economics and in Political Science, from the University of Nebraska-Lincoln in 2020, with a minor in Mathematics. In 2025, Jordan completed his Master of Arts and Doctor of Philosophy (Ph.D.), both in Political Science, at Washington University in St. Louis. His classroom experience includes teaching and tutoring a variety of Mathematics, Political Science, and Statistics courses.
